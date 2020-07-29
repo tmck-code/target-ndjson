@@ -55,9 +55,9 @@ def main():
         threading.Thread(target=send_usage_stats).start()
 
     tap_output = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
-    state = target.persist_lines(config, tap_output)
+    state = target.persist_lines(config, tap_output, logger)
 
-    target.emit_state(state)
+    target.emit_state(state, logger)
     logger.debug('Exiting normally')
 
 
