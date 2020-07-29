@@ -1,7 +1,13 @@
+'''
+This module writes NDJSON files from Singer Tap logs, aiming to be as fast and
+non-transformative as possible during the process
+'''
+
 from datetime import datetime
 import collections
+import sys
+import ujson as json
 
-import pkg_resources
 from jsonschema.validators import Draft4Validator
 import singer
 
@@ -10,8 +16,8 @@ logger = singer.get_logger()
 def emit_state(state):
     if state is not None:
         line = json.dumps(state)
-        logger.debug('Emitting state {}'.format(line))
-        sys.stdout.write('{}\n'.format(line))
+        logger.debug(f'Emitting state {line}')
+        sys.stdout.write(f'{line}\n')
         sys.stdout.flush()
 
 def flatten(d, parent_key='', sep='__'):
@@ -38,18 +44,18 @@ def persist_lines(config, lines):
         try:
             o = json.loads(line)
         except json.decoder.JSONDecodeError:
-            logger.error('Unable to parse:\n{}'.format(line))
+            logger.error(f'Unable to parse:\n{line}')
             raise
 
         if 'type' not in o:
-            raise Exception('Line is missing required key "type": {}'.format(line))
+            raise Exception(f'Line is missing required key "type": {line}')
         t = o['type']
 
         if t == 'RECORD':
             if 'stream' not in o:
-                raise Exception('Line is missing required key "stream": {}'.format(line))
+                raise Exception(f'Line is missing required key "stream": {line}')
             if o['stream'] not in schemas:
-                raise Exception('A record for stream {} was encountered before a corresponding schema'.format(o['stream']))
+                raise Exception(f'A record for stream {o["stream"]} was encountered before a corresponding schema')
 
             # Get schema for this record's stream
             schema = schemas[o['stream']]
@@ -64,11 +70,11 @@ def persist_lines(config, lines):
 
             state = None
         elif t == 'STATE':
-            logger.debug('Setting state to {}'.format(o['value']))
+            logger.debug('Setting state to {o["value"]}')
             state = o['value']
         elif t == 'SCHEMA':
             if 'stream' not in o:
-                raise Exception('Line is missing required key "stream": {}'.format(line))
+                raise Exception(f'Line is missing required key "stream": {line}')
             stream = o['stream']
             schemas[stream] = o['schema']
             validators[stream] = Draft4Validator(o['schema'])
@@ -76,8 +82,7 @@ def persist_lines(config, lines):
                 raise Exception('key_properties field is required')
             key_properties[stream] = o['key_properties']
         else:
-            raise Exception('Unknown message type {} in message {}'
-                            .format(o['type'], o))
+            raise Exception(f'Unknown message type {o["type"]} in message {o}')
 
     return state
 

@@ -8,6 +8,7 @@ import os
 import sys
 import threading
 import urllib
+import pkg_resources
 
 from target_ndjson import target
 
@@ -43,13 +44,13 @@ def main():
     if not config.get('disable_collection', False):
         logger.info('Sending version information to singer.io. ' +
                     'To disable sending anonymous usage data, set ' +
-                    'the config parameter 'disable_collection' to true')
+                    'the config parameter "disable_collection" to true')
         threading.Thread(target=send_usage_stats).start()
 
     tap_output = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
     state = target.persist_lines(config, tap_output)
 
-    emit_state(state)
+    target.emit_state(state)
     logger.debug('Exiting normally')
 
 
