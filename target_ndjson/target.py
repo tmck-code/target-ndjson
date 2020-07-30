@@ -44,7 +44,8 @@ def persist_lines(config, lines, logger):
     for line in lines:
         try:
             o = json.loads(line)
-        except json.decoder.JSONDecodeError:
+            assert isinstance(o, dict)
+        except (ValueError, AssertionError):
             logger.error(f'Unable to parse:\n{line}')
             raise
 
