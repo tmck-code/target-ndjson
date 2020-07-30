@@ -9,6 +9,10 @@ __pycache__/
 # Vim swap files
 *.swp
 
+# Rendered markdown files
+*.html
+*.pdf
+
 # Random OS files
 .DS_Store
 
