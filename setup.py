@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+'Defines metadata for target-ndjson'
+
 from setuptools import setup
 
 setup(
