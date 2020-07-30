@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name='target-ndjson',
-    version='0.1.0',
+    version='0.1.1',
     description='Singer.io target for extracting data to ndjson files',
     author='Stitch',
     url='http://singer.io',
