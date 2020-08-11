@@ -55,7 +55,7 @@ def main():
         threading.Thread(target=send_usage_stats).start()
 
     tap_output = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
-    state = target.persist_lines(config, tap_output, logger)
+    state = target.TargetNDJSON(config, logger).persist_lines(tap_output)
 
     target.emit_state(state, logger)
     logger.debug('Exiting normally')
