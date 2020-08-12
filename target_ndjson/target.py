@@ -64,7 +64,6 @@ class TargetNDJSON:
 
             self.state = None
         elif obj['type'] == 'STATE':
-            print('-----------', self.logger)
             self.logger.debug(f'Setting state to {obj["value"]}')
             self.state = obj['value']
         elif obj['type'] == 'SCHEMA':
