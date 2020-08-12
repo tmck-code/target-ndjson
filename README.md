@@ -38,6 +38,6 @@ make build test
 
 This repository is still a WIP! Next tasks, in no particular order:
 
-- [ ] Type hinting
+- [x] Type hinting
 - [x] Unit tests
 - [ ] Flatten option?
