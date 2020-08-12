@@ -8,7 +8,7 @@ import json
 import os
 import sys
 import threading
-import urllib
+import urllib.parse
 import pkg_resources
 
 import singer
@@ -16,7 +16,7 @@ from target_ndjson import target
 
 logger = singer.get_logger()
 
-def send_usage_stats():
+def send_usage_stats() -> None:
     'Send usage stats to singer.io'
     try:
         version = pkg_resources.get_distribution('target-csv').version
@@ -36,7 +36,7 @@ def send_usage_stats():
     except Exception:
         logger.debug('Collection request failed')
 
-def main():
+def main() -> None:
     'Parse command-line arguments and run main process'
 
     parser = argparse.ArgumentParser()

@@ -7,15 +7,16 @@ from datetime import datetime
 import sys
 import ujson
 from dataclasses import dataclass, field
+import logging
 
 from jsonschema.validators import Draft4Validator
 
 class InvalidTapJSON(ValueError):
     'Raised whenever a Tap output log cannot be parsed'
 
-def emit_state(state, logger):
+def emit_state(state: str, logger: logging.Logger) -> None:
     'Emit state via logger and STDOUT'
-    if state is not None:
+    if state:
         line = ujson.dumps(state)
         logger.debug(f'Emitting state {line}')
         sys.stdout.write(f'{line}\n')
@@ -24,7 +25,7 @@ def emit_state(state, logger):
 @dataclass
 class TargetNDJSON:
     config:         dict
-    logger:         object
+    logger:         logging.Logger
     state:          str = ''
     schemas:        dict = field(default_factory=dict)
     key_properties: dict = field(default_factory=dict)
@@ -34,15 +35,15 @@ class TargetNDJSON:
     file_streams:   dict = field(default_factory=dict)
 
     @staticmethod
-    def __fpath_for_stream(stream_name, timestamp):
+    def __fpath_for_stream(stream_name: str, timestamp: str) -> str:
         return '_'.join([stream_name, timestamp]) + '.ndjson'
 
-    def ensure_files_closed(self):
+    def ensure_files_closed(self) -> None:
         'Ensures that all output files are closed'
         for _stream, ostream in self.file_streams.items():
             ostream.close()
 
-    def process_line(self, obj):
+    def process_line(self, obj: dict) -> None:
         if 'type' not in obj:
             raise Exception(f'Line is missing required key "type": {obj}')
 
@@ -62,7 +63,7 @@ class TargetNDJSON:
             # Write to file
             self.file_streams[obj['stream']].write(ujson.dumps(obj['record']) + '\n')
 
-            self.state = None
+            self.state = ''
         elif obj['type'] == 'STATE':
             self.logger.debug(f'Setting state to {obj["value"]}')
             self.state = obj['value']
