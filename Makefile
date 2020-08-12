@@ -1,4 +1,4 @@
-IMAGE ?= integration-scripts
+IMAGE ?= "target-ndjson"
 TAG ?= $(shell git log -1 --format=%h)
 
 lint:
