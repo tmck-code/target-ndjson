@@ -1,9 +1,10 @@
 'Test the target-ndjson module'
 
 import singer
+import ujson
+
 from target_ndjson import target
 
-import ujson
 
 class TestTargetNDJSON:
     'Tests the target-ndjson module'
@@ -14,7 +15,7 @@ class TestTargetNDJSON:
             'stream': 'orders',
             'schema': {
                 'properties': {
-                    'transaction_amount': {'type': [ 'null', 'string' ] },
+                    'transaction_amount': {'type': ['null', 'string']},
                     'created_at': {'type': 'string'},
                     'email': {'type': 'string'}
                 }

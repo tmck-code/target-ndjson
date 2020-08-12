@@ -34,7 +34,7 @@ class TargetNDJSON:
 
     @staticmethod
     def __fpath_for_stream(stream_name, timestamp):
-        return '_'.join([stream_name, timestamp])
+        return '_'.join([stream_name, timestamp]) + '.ndjson'
 
     def process_line(self, obj):
         if 'type' not in obj:

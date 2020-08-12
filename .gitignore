@@ -30,7 +30,6 @@ lib64/
 parts/
 sdist/
 var/
-<<<<<<< HEAD
 wheels/
 pip-wheel-metadata/
 share/python-wheels/
@@ -38,11 +37,6 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-=======
-*.egg-info/
-.installed.cfg
-*.egg
->>>>>>> init
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -57,24 +51,16 @@ pip-delete-this-directory.txt
 # Unit test / coverage reports
 htmlcov/
 .tox/
-<<<<<<< HEAD
 .nox/
-=======
->>>>>>> init
 .coverage
 .coverage.*
 .cache
 nosetests.xml
 coverage.xml
-<<<<<<< HEAD
 *.cover
 *.py,cover
 .hypothesis/
 .pytest_cache/
-=======
-*,cover
-.hypothesis/
->>>>>>> init
 
 # Translations
 *.mo
@@ -83,11 +69,8 @@ coverage.xml
 # Django stuff:
 *.log
 local_settings.py
-<<<<<<< HEAD
 db.sqlite3
 db.sqlite3-journal
-=======
->>>>>>> init
 
 # Flask stuff:
 instance/
@@ -102,7 +85,6 @@ docs/_build/
 # PyBuilder
 target/
 
-<<<<<<< HEAD
 # Jupyter Notebook
 .ipynb_checkpoints
 
@@ -142,42 +124,10 @@ venv.bak/
 # Spyder project settings
 .spyderproject
 .spyproject
-=======
-# IPython Notebook
-.ipynb_checkpoints
-
-# pyenv
-.python-version
-
-# celery beat schedule file
-celerybeat-schedule
-
-# dotenv
-.env
-
-# virtualenv
-venv/
-ENV/
-
-# Spyder project settings
-.spyderproject
->>>>>>> init
 
 # Rope project settings
 .ropeproject
 
-<<<<<<< HEAD
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-=======
 # Mac
 ._*
 .DS_Store
@@ -191,4 +141,3 @@ rsa-key
 tags
 singer-check-tap-data
 state.json
->>>>>>> init
