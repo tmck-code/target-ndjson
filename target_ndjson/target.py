@@ -89,6 +89,7 @@ class TargetNDJSON:
                 assert isinstance(obj, dict)
             except (ValueError, AssertionError) as e:
                 self.logger.error(f'Unable to parse:\n{line}')
+                self.ensure_files_closed()
                 raise InvalidTapJSON(f'Unable to parse: {e} - {line}')
 
             try:
