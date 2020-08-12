@@ -19,7 +19,7 @@ logger = singer.get_logger()
 def send_usage_stats() -> None:
     'Send usage stats to singer.io'
     try:
-        version = pkg_resources.get_distribution('target-csv').version
+        version = pkg_resources.get_distribution('target-ndjson').version
         conn = http.client.HTTPConnection('collector.singer.io', timeout=10)
         conn.connect()
         params = {
