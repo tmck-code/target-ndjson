@@ -30,11 +30,17 @@ class TargetNDJSON:
     key_properties: dict = field(default_factory=dict)
     _headers:       dict = field(default_factory=dict)
     validators:     dict = field(default_factory=dict)
-    now:            str  = datetime.now().strftime('%Y%m%dT%H%M%S')
+    now:            str = datetime.now().strftime('%Y%m%dT%H%M%S')
+    file_streams:   dict = field(default_factory=dict)
 
     @staticmethod
     def __fpath_for_stream(stream_name, timestamp):
         return '_'.join([stream_name, timestamp]) + '.ndjson'
+
+    def ensure_files_closed(self):
+        'Ensures that all output files are closed'
+        for _stream, ostream in self.file_streams.items():
+            ostream.close()
 
     def process_line(self, obj):
         if 'type' not in obj:
@@ -48,18 +54,16 @@ class TargetNDJSON:
                     f'A record for stream {obj["stream"]} was encountered before a '
                     'corresponding schema'
                 )
+            if obj['stream'] not in self.file_streams:
+                self.file_streams[obj['stream']] = open(TargetNDJSON.__fpath_for_stream(obj['stream'], self.now), 'w')
 
-            # Get schema for this record's stream
-            # schema = schemas[obj['stream']]
             # Validate record
             self.validators[obj['stream']].validate(obj['record'])
             # Write to file
-            with open(TargetNDJSON.__fpath_for_stream(obj['stream'], self.now), 'a') as ostream:
-                ostream.write(ujson.dumps(obj['record']) + '\n')
+            self.file_streams[obj['stream']].write(ujson.dumps(obj['record']) + '\n')
 
             self.state = None
         elif obj['type'] == 'STATE':
-            print('-----------', self.logger)
             self.logger.debug(f'Setting state to {obj["value"]}')
             self.state = obj['value']
         elif obj['type'] == 'SCHEMA':
@@ -86,5 +90,11 @@ class TargetNDJSON:
                 self.logger.error(f'Unable to parse:\n{line}')
                 raise InvalidTapJSON(f'Unable to parse: {e} - {line}')
 
-            self.process_line(obj)
+            try:
+                self.process_line(obj)
+            except Exception as e:
+                self.logger.error('Closing all output files after error: %s', e)
+                self.ensure_files_closed()
+                raise e
+        self.ensure_files_closed()
         return self.state
