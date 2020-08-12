@@ -5,6 +5,8 @@ fail-under=10
 [MESSAGES CONTROL]
 # Allow use of f-string interpolation in log calls
 extension-pkg-whitelist=ujson
+# Allow vertical alignment of variable and type definitions
+bad-whitespace
 
 [BASIC]
 # These are allowable short variable names
