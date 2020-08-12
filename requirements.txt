@@ -1,0 +1,7 @@
+singer-python>=5.0.12
+ujson
+pytest
+attrs
+jsonschema
+strict-rfc3339
+terminaltables

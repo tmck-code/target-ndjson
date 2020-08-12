@@ -13,6 +13,25 @@ essentially unpacks each `"RECORD"` log recived, verbatim, and writes to file.
 This target is intended for use in systems that implement their own data
 processing layers.
 
+## Testing
+
+This repository can be tested using `pytest`, with or with out a docker container
+
+### Without Docker
+
+```shell
+pip install -r requirements.txt
+pytest
+```
+
+### With Docker
+
+```shell
+# This Makefile contains handy helper commands for using docker.
+# You can also use the docker commands directly (see Makefile for examples)
+make build test
+```
+
 ---
 
 ## TODO
@@ -20,5 +39,5 @@ processing layers.
 This repository is still a WIP! Next tasks, in no particular order:
 
 - [ ] Type hinting
-- [ ] Unit tests
+- [x] Unit tests
 - [ ] Flatten option?
