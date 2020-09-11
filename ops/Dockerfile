@@ -18,3 +18,5 @@ RUN git clone https://github.com/singer-io/singer-tools.git
 WORKDIR /home/python
 
 ADD . .
+
+RUN pip install -e .
