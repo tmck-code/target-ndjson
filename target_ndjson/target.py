@@ -3,100 +3,111 @@ This module writes NDJSON files from Singer Tap logs, aiming to be as fast and
 non-transformative as possible during the process
 '''
 
-from datetime import datetime
-import sys
-import ujson
 from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Dict
 import logging
+import sys
 
 from jsonschema.validators import Draft4Validator
+import ujson as json
 
-class InvalidTapJSON(ValueError):
-    'Raised whenever a Tap output log cannot be parsed'
+class InvalidTap(Exception):      'Raised if incorrect tap output is encountered'
+class InvalidTapJSON(InvalidTap): 'Raised whenever a Tap output log cannot be parsed'
+class MissingSchema(InvalidTap):  'Raised if a stream RECORD is encountered before a corresponding SCHEMA line'
 
-def emit_state(state: str, logger: logging.Logger) -> None:
-    'Emit state via logger and STDOUT'
-    if state:
-        line = ujson.dumps(state)
-        logger.debug(f'Emitting state {line}')
-        sys.stdout.write(f'{line}\n')
-        sys.stdout.flush()
+@dataclass
+class TargetStream:
+    'Holds all required metadata in order to process a stream line'
+
+    name:           str
+    validator:      Draft4Validator
+    schema:         dict
+    key_properties: dict
+    ostream:        str
+
+
+@dataclass
+class TargetStreamCollection:
+    'Holds metadata for all streams that have been encountered'
+
+    streams: Dict[str, TargetStream] = field(default_factory=dict)
+
+    @staticmethod
+    def __fpath_for_stream(stream_name: str) -> str:
+        return '_'.join([stream_name, datetime.now().strftime('%Y%m%d')]) + '.ndjson'
+
+    def add_stream(self, stream, schema, key_properties):
+        self.streams[stream] = TargetStream(
+            name=stream,
+            validator=Draft4Validator(schema),
+            schema=schema,
+            key_properties=key_properties,
+            ostream=open(TargetStreamCollection.__fpath_for_stream(stream), 'w')
+        )
+
+    def get(self, stream):
+        if stream not in self.streams:
+            raise MissingSchema(f'Stream record for "{stream}" encountered before matching schema')
+        return self.streams[stream]
 
 @dataclass
 class TargetNDJSON:
-    config:         dict
-    logger:         logging.Logger
-    state:          str = ''
-    schemas:        dict = field(default_factory=dict)
-    key_properties: dict = field(default_factory=dict)
-    _headers:       dict = field(default_factory=dict)
-    validators:     dict = field(default_factory=dict)
-    now:            str = datetime.now().strftime('%Y%m%dT%H%M%S')
-    file_streams:   dict = field(default_factory=dict)
+    'A NDJSON singer target. Ingests log lines and then writes to destination according to supplied config'
 
-    @staticmethod
-    def __fpath_for_stream(stream_name: str, timestamp: str) -> str:
-        return '_'.join([stream_name, timestamp]) + '.ndjson'
+    # TODO destination here
+    destination: object
+    logger:  logging.Logger
+    streams: TargetStreamCollection = TargetStreamCollection()
+    state:   str = ''
 
-    def ensure_files_closed(self) -> None:
-        'Ensures that all output files are closed'
-        for _stream, ostream in self.file_streams.items():
-            ostream.close()
 
     def process_line(self, obj: dict) -> None:
-        if 'type' not in obj:
-            raise Exception(f'Line is missing required key "type": {obj}')
+        'Checks and processes a parsed log from a tap'
 
-        if obj['type'] == 'RECORD':
-            if 'stream' not in obj:
-                raise Exception(f'Line is missing required key "stream": {obj}')
-            if obj['stream'] not in self.schemas:
-                raise Exception(
-                    f'A record for stream {obj["stream"]} was encountered before a '
-                    'corresponding schema'
-                )
-            if obj['stream'] not in self.file_streams:
-                self.file_streams[obj['stream']] = open(TargetNDJSON.__fpath_for_stream(obj['stream'], self.now), 'w')
+        if obj['type'] == 'SCHEMA':
+            self.streams.add_stream(
+                stream         = obj['stream'],
+                schema         = obj['schema'],
+                key_properties = obj['key_properties']
+            )
 
-            # Validate record
-            self.validators[obj['stream']].validate(obj['record'])
-            # Write to file
-            self.file_streams[obj['stream']].write(ujson.dumps(obj['record']) + '\n')
+        elif obj['type'] == 'RECORD': 
+            self.streams.get(obj['stream']).validator.validate(obj['record'])
+            # Data is written/transported here
+            self.streams.get(obj['stream']).ostream.write(json.dumps(obj['record']) + '\n')
 
-            self.state = ''
         elif obj['type'] == 'STATE':
-            self.logger.debug(f'Setting state to {obj["value"]}')
             self.state = obj['value']
-        elif obj['type'] == 'SCHEMA':
-            if 'stream' not in obj:
-                raise Exception(f'Line is missing required key "stream": {obj}')
-            stream = obj['stream']
-            self.schemas[stream] = obj['schema']
-            self.validators[stream] = Draft4Validator(obj['schema'])
-            if 'key_properties' not in obj:
-                raise Exception('key_properties field is required')
-            self.key_properties[stream] = obj['key_properties']
         else:
-            raise Exception(f'Unknown message type {obj["type"]} in message {obj}')
+            raise InvalidTap(f'Unknown message type "{obj["type"]}" in message: {obj}')
 
-    def persist_lines(self, lines):
-        'Triages and writes the logs lines to physical files on disk'
+    @staticmethod
+    def parse_line(line) -> dict:
+        'Parses a line of JSON tap output'
 
-        # Loop over lines from stdin
+        obj = json.loads(line)
+        if not isinstance(obj, dict):
+            raise InvalidTapJSON(f'Unable to parse, expected object: {line}')
+        return obj
+
+    def persist_lines(self, lines) -> None:
+        'Iterates through log lines and processes each one sequentially'
+
         for line in lines:
             try:
-                obj = ujson.loads(line)
-                assert isinstance(obj, dict)
-            except (ValueError, AssertionError) as e:
-                self.logger.error(f'Unable to parse:\n{line}')
-                self.ensure_files_closed()
-                raise InvalidTapJSON(f'Unable to parse: {e} - {line}')
-
-            try:
-                self.process_line(obj)
+                self.process_line(TargetNDJSON.parse_line(line))
+            except KeyError as e:
+                raise InvalidTap(f'Exiting after invalid tap output, missing key "{e}": {line}')
             except Exception as e:
-                self.logger.error('Closing all output files after error: %s', e)
-                self.ensure_files_closed()
-                raise e
-        self.ensure_files_closed()
-        return self.state
+                raise InvalidTap(f'Exiting after unknown error "{e.__class__}": {e}')
+        for stream, obj in self.streams.streams.items():
+            obj.ostream.close()
+        self.emit_state()
+
+    def emit_state(self) -> None:
+        'Emit state via logger and STDOUT'
+
+        if self.state:
+            sys.stdout.write(f'{json.dumps(self.state)}\n')
+            sys.stdout.flush()
